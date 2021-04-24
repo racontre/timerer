@@ -5,7 +5,10 @@ Created on 3 apr. 2021.
 '''
 import tkinter as tk
 import tkinter.ttk as ttk
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import contents
+import recorder
 #import matplotlib.pyplot  as plt
 #from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
@@ -13,11 +16,20 @@ class graph_window(object):
     '''
     classdocs
     '''
-
+    
+    test_data =  {'Year': [1920,1930,1940,1950,1960,1970,1980,1990,2000,2010],
+         'Unemployment_Rate': [9.8,12,8,7.2,6.9,7,6.5,6.2,5.5,6.3]
+        }  
+    
     def __init__(self, master_window, activity_list):
+        
+        record = recorder.Record()
         def check_states():
-            for state in check_vars.values():
-                print(state.get())
+            for check in check_vars:
+                if check_vars[check].get():
+                    print(check)
+                    record.get_records(check)
+                    graph_window.build_graph(self)
         
         self.window = tk.Toplevel(master_window)
         self.window.title("Graph")
@@ -37,16 +49,20 @@ class graph_window(object):
             tk.Checkbutton(self.window, text=activity, variable=check_vars[activity],
                              bg = contents.bgColor).grid(row=index, sticky=tk.W)
         
-        tk.Button(self.window, text='Show', command=check_states).grid(row=4, sticky=tk.W, pady=4)
+        tk.Button(self.window, text='Show', command=check_states).grid(column = 2, row=4, sticky=tk.E, pady=4, padx = 6)
         self.ui_frame.grid()                          #to be shown at start
         
 
-    '''     
+    
     def build_graph(self):
-        figure = plt.Figure(figsize=(6,5), dpi=100)
-        ax = figure.add_subplot(111)
-        chart_type = FigureCanvasTkAgg(figure, self.window)
-        chart_type.get_tk_widget().pack()
-        df = df[['First Column','Second Column']].groupby('First Column').sum()
-        df.plot(kind='Chart Type such as bar', legend=True, ax=ax)
-        .set_title('The Title for your chart')'''
+        figure2 = plt.Figure(figsize=(5,4), dpi=50)
+        ax2 = figure2.add_subplot(111).bar(list(graph_window.test_data['Year']), 
+                 list(graph_window.test_data['Unemployment_Rate']))
+        #ax2.set_title('Year Vs. Unemployment Rate')
+        line2 = FigureCanvasTkAgg(figure2, self.window)
+        line2.get_tk_widget().grid(column = 0, row=15, sticky=tk.E, pady=4, padx = 6)
+        #df2 = df2[['Year','Unemployment_Rate']].groupby('Year').sum()
+        print(list(graph_window.test_data['Year']))
+        plt.plot(list(graph_window.test_data['Year']), 
+                 list(graph_window.test_data['Unemployment_Rate']))
+        plt.grid(True)

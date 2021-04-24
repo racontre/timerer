@@ -10,30 +10,25 @@ except ImportError:
 import json
 import os
 import contents
-
+import logger
 
 class Activity:
     '''This script manages activities' information such as save data and descriptions'''
     scriptpath = os.path.dirname(os.path.realpath(__file__))
-
+    save_path = scriptpath + '\\user_activity.sav'
+    
     def note_management(self):
         '''
         This method is to detect if the user already has save data.
         If it doesn't exist, initialise
         '''
-        if os.path.isfile(Activity.scriptpath + '\\user_activity.sav'):
-            print ("File exist") #load
+        if os.path.isfile(Activity.save_path):
+            Activity.load(self, Activity.save_path, self.activityList)
         else:
-            #init save file
-            with open(Activity.scriptpath + '\\user_activity.sav', 'w+') as the_file:
-                dictionary = {
-                    'Test Activity': {
-                        'description': 'This is a test Activity!',
-                        'timer': '0:1:34'
-                    }
-                }
-                json_object = json.dumps(dictionary, indent = 4)
-                the_file.write(json_object)
+            if os.path.isfile(Activity.save_path + '.bak'):          
+                Activity.load(self, Activity.save_path + '.bak', self.activityList)
+            else:
+                Activity.write_json(Activity.save_path, contents.activityDefaultDict)
 
     def edit_description(self, text_container):
         '''Method allows to edit the text container'''
@@ -46,38 +41,67 @@ class Activity:
         '''
         #self.noteTxt.config(state = tk.DISABLED)
         contents.ActivityDescription = text_container.get("1.0",tk.END)
-        with open(Activity.scriptpath +'\\user_activity.sav', 'r') as the_file:
-            save_dict = json.loads(the_file.read())
-            save_dict[contents.activityChosen] =   { 'description' : contents.activityDescription,
-                                                'timer' : contents.activityTimer,
+        save_dict = Activity.get_json(Activity.save_path)
+        save_dict[contents.activityChosen] =   { 'description' : contents.activityDescription,
+                                                'recorder' : contents.activityTimer,
                                                 'history' : {},
                                                'isDeleted' : False
                                                 }
 #should be checking if theres any new ones. Otherwise it wont save
-        with open(Activity.scriptpath +'\\user_activity.sav.tmp', 'w') as the_file:
-            json_object = json.dumps(save_dict, indent = 4)
-            print(save_dict)
+
+        Activity.write_json(Activity.save_path, save_dict)
+        #with open(self.scriptpath +'\\user_activity.sav.tmp', 'w') as the_file:
+        #    json_object = json.dumps(save_dict, indent = 4)
+        #    print(save_dict)
+        #    the_file.write(json_object)
+        
+    
+    @staticmethod
+    @logger.log
+    def get_json(file_path):
+        '''Receives the json save data from a file'''
+        try:
+            with open(file_path, 'r') as the_file:
+                json_dict = json.loads(the_file.read())
+        except FileNotFoundError:
+            '''user_activity.sav was not found. Trying to restore backup...'''
+            try:
+                with open(file_path + '.bak', 'r') as the_file:
+                    json_dict = json.loads(the_file.read())
+            except FileNotFoundError:
+                '''Failed to restore save'''
+                json_dict = contents.activityDefaultDict
+        return json_dict
+    
+    
+    @staticmethod
+    @logger.log
+    def write_json(file_path, input_dictionary):
+        '''Converts dictionary to json and writes to a file'''
+        with open(file_path + '.tmp', 'w+') as the_file:
+            json_object = json.dumps(input_dictionary, indent = 4)
             the_file.write(json_object)
-        os.replace(Activity.scriptpath +'\\user_activity.sav', Activity.scriptpath
-                   +'\\user_activity.sav.bak')
-        os.replace(Activity.scriptpath +'\\user_activity.sav.tmp', Activity.scriptpath
-                   +'\\user_activity.sav')
+        try:
+            os.replace(Activity.save_path, Activity.scriptpath +'\\user_activity.sav.bak')
+        except FileNotFoundError:
+            '''For some reason I do not understand, the .sav just isn't there
+            Perhaps we loaded a backup'''
+            pass
+        os.replace(file_path + '.tmp', Activity.save_path)
 
-
-    def load(self, activity_container):
+    def load(self, file_path, activity_container):
         '''
         Method goes through each key in the dict
         and adds valid keys to the container
         '''
-        with open(Activity.scriptpath +'\\user_activity.sav', 'r') as the_file:
-            save_dict = json.loads(the_file.read())
-            for key in save_dict:
-                try:
-                    if not save_dict[key]['isDeleted']:
-                        print(key)
-                        activity_container.insert(tk.END, key)
-                except KeyError:
-                    print(key, ' causes the KeyError exception. Its isDeleted ', save_dict[key])
+        save_dict = Activity.get_json(file_path)
+        for key in save_dict:
+            try:
+                if not save_dict[key]['isDeleted']:
+                    print(key)
+                    activity_container.insert(tk.END, key)
+            except KeyError:
+                print(key, ' causes the KeyError exception. Its isDeleted ', save_dict[key])
 
     def cancel_edit(self, text_container):
         '''
@@ -116,7 +140,6 @@ class Activity:
             data = file.read()
         except FileNotFoundError:
             data = ''
-        print(data)
         contents.activityDescription = data
         text_container.config(state=tk.NORMAL)
         text_container.delete(1.0, tk.END)  # if you want to remove the old data

@@ -2,6 +2,7 @@
 Created on 17 feb 2020 y.
 
 @author: RX-79
+todo: rename all to snake style
 '''
 
 introSeen = False
@@ -17,6 +18,8 @@ TitleNom = "Timerer!"
 placeholderNom = "placeholdere"
 activityNom = "Activity: "
 activityAddNom = "Add New Activity: "
+activity_add_warning = "Do not use the following characters: <>`[]{}"
+activity_add_warning_title = "Illegal String"
 activityListNom = "Activity List"
 activitySummaryTodayNom = "Activitied for today: "
 activitySummaryCounter = "<none>"
@@ -26,6 +29,13 @@ activityDescription = "Enter your description..."
 activityDeleteBtn = "Del"
 activityGraphBtn = "Graph"
 activityAddBtn = "+"
+
+activityDefaultDict =  { 'Test Activity':{ 'description' : 'This is a test Activity!',
+                        'recorder' : '0:1:34',
+                        'history' : {},
+                        'isDeleted' : False
+                        }
+                        }
 
 activityChosen = "<none>" #should be reset if activity is deleted
 activityIsDeleted = False
@@ -49,3 +59,4 @@ timerCounterNom = "0 : 0 : 0"
 timerSavePrompt = "Save the time for today?"
 
 illegalStr = ['','   ','\n']
+illegalChar = '<>/{}[\]~`'

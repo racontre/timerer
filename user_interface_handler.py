@@ -16,7 +16,9 @@ try:
 except ImportError:
     import TkMessageBox as mbox
 import os
-import json  
+import re
+import sys
+import logger
 from graph_window import graph_window
 
 class user_interface_handler:
@@ -106,7 +108,6 @@ class user_interface_handler:
         self.activityList.grid(column = 5, row = 1, columnspan = 4, rowspan = 7, sticky=tk.E, pady=10, padx=10)
         self.activityList.bind('<Double-1>', lambda x: user_interface_handler.choose_item(self))
         Activity.note_management(self)
-        Activity.load(self, self.activityList)
         self.activityList.config(width=20)
 
         additionButton = tk.Button(self.ui_frame, text = contents.activityAddBtn, command = lambda: user_interface_handler.add_item(self, self.additionEntry.get()))
@@ -123,19 +124,18 @@ class user_interface_handler:
 ########################################################################################  List things  
     def add_item(self, item_name):
         list2files = self.activityList.get(0, tk.END)
+        regex_illegal = re.compile(r"[<>/{}[\]`]")
         if self.additionEntry.get() not in list2files:
-            if not all('' == s or s.isspace() for s in self.additionEntry.get()):
-                self.activityList.insert(tk.END, item_name)
-                with open(Activity.scriptpath +'\\user_activity.sav', 'r') as the_file:
-                    save_dict = json.loads(the_file.read()) #try-excepts
+            if not all('' == name or name.isspace() or name in contents.illegalStr for name in self.additionEntry.get()):
+                if not regex_illegal.search(item_name):
+                    self.activityList.insert(tk.END, item_name) 
+                    save_dict = Activity.get_json(Activity.save_path)
                     save_dict[item_name] = {'description' : 'Add a description',
-                                                'timer' : '',
+                                                'recorder' : '',
                                                 'history' : {},
                                                'isDeleted' : False}
-                with open(Activity.scriptpath +'\\user_activity.sav', 'w') as the_file:
-                    json_object = json.dumps(save_dict, indent = 4)
-                    print(save_dict)
-                    the_file.write(json_object)
+                    Activity.write_json(Activity.save_path, save_dict)
+                else: mbox.showerror(contents.activity_add_warning_title, contents.activity_add_warning)
         #try add file
         #manage creating a file for new activity! fields such as: days designated, amount of time, etc
         
@@ -148,22 +148,19 @@ class user_interface_handler:
 
     def rem_item(self):    
         selected = list(self.activityList.curselection())
-   
         for select in selected:
-            with open(Activity.scriptpath +'\\user_activity.sav', 'r') as the_file:
-                save_dict = json.loads(the_file.read()) #try-excepts
-                save_dict[self.activityList.get(self.activityList.curselection())]['isDeleted'] = True
-            with open(Activity.scriptpath +'\\user_activity.sav', 'w') as the_file:
-                json_object = json.dumps(save_dict, indent = 4)
-                print(save_dict)
-                the_file.write(json_object)
-            if contents.activityChosen in self.activityList.get(0, tk.END):       #seems to work now 
-                if mbox.askyesno("Delete", "Delete the activity?"):                                     #but maybe i should show the prompt regardless
-                    self.activityList.delete(select) 
-                    contents.activityChosen = ''  
-                    self.activityAnnounce.config(text = contents.activityNom + contents.activityChosen)
-            else:
-                self.activityList.delete(select)   
+            if contents.activityChosen in self.activityList.get(0, tk.END): 
+                if mbox.askyesno("Delete", "Delete the activity?"):
+                    save_dict = Activity.get_json(Activity.save_path)
+                    try:
+                        save_dict[self.activityList.get(select)]['isDeleted'] = True
+                    except:
+                        logger.logging.error('Some exception while removing:', sys.exc_info())
+                    finally:
+                        self.activityList.delete(select) 
+                        contents.activityChosen = ''  
+                        self.activityAnnounce.config(text = contents.activityNom + contents.activityChosen)
+                        Activity.write_json(Activity.save_path, save_dict)
             
         #check for illegal arguments?
         
@@ -194,18 +191,17 @@ class user_interface_handler:
             user_interface_handler.update_clock(self)
         # now make a choice to PAUSE or to RESTART! and save result
 
-    def update_clock(self):                                 ##i messed up really hard here wtf
-        self.timerOutput = dt.now() - self.start            ##should probably rewrite sometime
+    def update_clock(self):
+        self.timerOutput = dt.now() - self.start            
         self.secOutput = int (self.timerOutput.total_seconds()) 
         self.hoursOutput = (self.secOutput // 3600)
         self.minutesOutput = (self.secOutput % 3600) //60
         self.secOutput = self.secOutput - self.hoursOutput*3600 - self.minutesOutput * 60
-        #print(self.hoursOutput, ':', self.minutesOutput, ':', self.secOutput)
         self.timerAnnounce.config(text = ( self.hoursOutput,':',  self.minutesOutput,':', self.secOutput))
         self.handleTimer = self.window.after(1000, self.update_clock)
         
-    def timer_save(self):               #make into a prompt 
-        if mbox.askyesno("Save", "Save the timer?"):
+    def timer_save(self):               #make comment prompt
+        if mbox.askyesno("Save", "Save the recorder?"):
             date_time_str = dt.now()
             date_time_ymd = dt.strptime(str(date_time_str), '%Y-%m-%d %H:%M:%S.%f')
             date_time_ymd = date_time_ymd.strftime('%d/%m/%Y %H:%M:%S')
@@ -213,8 +209,8 @@ class user_interface_handler:
             file = open(path,"a")
             file.write(date_time_ymd + ',' + contents.activityChosen + ',' + ( str(self.hoursOutput) + ':' +  str(self.minutesOutput) + ':' + str(self.secOutput))+'\n')
         
-            #works now save it but lags a bit
-    def load_sections_time(self):   #i worked hard on this so you could witness the worst code ever
+    
+    def load_sections_time(self):
         if contents.activityChosen in self.activityList.get(0, tk.END):
             try: 
                 with open(os.path.dirname(os.path.realpath(__file__))+"\\data\\" + contents.activityChosen , 'r') as infile:
@@ -237,11 +233,12 @@ class user_interface_handler:
             except FileNotFoundError:
                 contents.activityTimer = "no file"
                 self.activitySummary.config(text = contents.activitySummaryTodayNom + "no file")
+
+########################################################################################
+
+########################################################################################  Graph things       
     
 
     def create_graph(self):
         list2files = self.activityList.get(0, tk.END)
         graph_instance = graph_window(self.window, list2files)
-########################################################################################
-
-########################################################################################  Note things       
