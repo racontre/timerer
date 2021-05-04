@@ -21,18 +21,21 @@ class Record(object):
         '''
 
     def  get_records(self, activity_name):
-        hours = []
+        hours = {'date' : [],
+                 'duration' : [],
+                }
         try:
             with open(os.path.dirname(os.path.realpath(__file__))+"\\data\\" + activity_name , 'r') as infile:
                 for line in infile:
-                    data = line.split(',')
+                    data = line.split(',') #0th  is the day, 1st is the comment, 2nd is duration
                     date = dt.strptime(data[0], '%d/%m/%Y %H:%M:%S')
-                    logger.logging.info(data)
-                    
-                    #hours.append()
+                    duration = dt.strptime(data[2], '%H:%M:%S\n')
+                    hours['date'].append(date.day) #pick what to show at graph making
+                    hours['duration'].append(duration.hour + duration.minute/60 + duration.second/3600)
         except FileNotFoundError:
                 logger.logging.error("get_records: no file for ", activity_name)
-                
+        logger.logging.info(hours)
+        return (hours)
 
     def time_parse(self, time_string):
         pass

@@ -28,8 +28,8 @@ class graph_window(object):
             for check in check_vars:
                 if check_vars[check].get():
                     print(check)
-                    record.get_records(check)
-                    graph_window.build_graph(self)
+                    records = record.get_records(check)
+                    graph_window.build_graph(self, records)
         
         self.window = tk.Toplevel(master_window)
         self.window.title("Graph")
@@ -54,15 +54,31 @@ class graph_window(object):
         
 
     
-    def build_graph(self):
+    def build_graph(self, data):
+        #data things are in datetime.datetime format
         figure2 = plt.Figure(figsize=(5,4), dpi=50)
-        ax2 = figure2.add_subplot(111).bar(list(graph_window.test_data['Year']), 
-                 list(graph_window.test_data['Unemployment_Rate']))
+        ax2 = figure2.add_subplot(111).bar(list(data['date']), 
+                 list(data['duration']))
         #ax2.set_title('Year Vs. Unemployment Rate')
         line2 = FigureCanvasTkAgg(figure2, self.window)
         line2.get_tk_widget().grid(column = 0, row=15, sticky=tk.E, pady=4, padx = 6)
         #df2 = df2[['Year','Unemployment_Rate']].groupby('Year').sum()
-        print(list(graph_window.test_data['Year']))
-        plt.plot(list(graph_window.test_data['Year']), 
-                 list(graph_window.test_data['Unemployment_Rate']))
+        print(list(data['date']))
+        plt.plot(list(data['date']), 
+                 list(data['duration']))
         plt.grid(True)
+       
+    
+    def build_canvas(self):
+        w = tk.Canvas(self.window, width=200, height=100)
+        canvas_height = 100
+        bar_width = 15
+        scale = 4
+        for x,y in enumerate(list(graph_window.test_data['Unemployment_Rate'])):  
+            x1 = x + x * bar_width     
+            y1 = canvas_height - y*scale     
+            x2 = x + x * bar_width + bar_width    
+            y2 = canvas_height    
+            w.create_rectangle(x1, y1, x2, y2, fill="blue")    
+            w.create_text(x1+3, y1, font=("", 6),        text=str(y),anchor='sw' )
+        w.grid(column = 0, row=15, sticky=tk.E, pady=4, padx = 6)
