@@ -7,6 +7,7 @@ import tkinter as tk
 import tkinter.ttk as ttk
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import matplotlib.dates as mdates
 import contents
 import recorder
 #import matplotlib.pyplot  as plt
@@ -24,12 +25,17 @@ class graph_window(object):
     def __init__(self, master_window, activity_list):
         
         record = recorder.Record()
+        
+        
         def check_states():
+            records=  []
+            names = []
             for check in check_vars:
                 if check_vars[check].get():
                     print(check)
-                    records = record.get_records(check)
-                    graph_window.build_graph(self, records)
+                    records.append(record.get_records(check))
+                    names.append()
+            graph_window.build_graph(self, records)
         
         self.window = tk.Toplevel(master_window)
         self.window.title("Graph")
@@ -54,19 +60,41 @@ class graph_window(object):
         
 
     
-    def build_graph(self, data):
+    def build_graph(self, checked_data):
         #data things are in datetime.datetime format
-        figure2 = plt.Figure(figsize=(5,4), dpi=50)
-        ax2 = figure2.add_subplot(111).bar(list(data['date']), 
-                 list(data['duration']))
-        #ax2.set_title('Year Vs. Unemployment Rate')
-        line2 = FigureCanvasTkAgg(figure2, self.window)
+        #check if graph already exists
+        # Create figure and plot a stem plot with the date
+        fig, ax = plt.subplots(figsize=(8.8, 4), constrained_layout=True)
+        ax.set(title="Activity Graph")
+        for  data in checked_data:
+            ax.bar(list(data['date']), list(data['duration']), bottom=0)  # Baseline and markers on it.
+        
+        #plt.legend(['NA', 'EU', 'JP', 'Others'], loc='upper left', ncol = 4)
+        #ax.xaxis.set_major_locator(mdates.MonthLocator(interval=4))
+        ax.xaxis.set_major_formatter(mdates.DateFormatter("%d %b"))
+        
+        #figure2 = plt.Figure(figsize=(6,4), dpi=100)
+        #figure1 = plt.Figure(figsize=(6,4), dpi=50)
+        #ax2 = figure2.add_subplot().bar(list(data['date']), 
+        #     list(data['duration']))
+        #ax2.set_label("reatrd")
+        #figure2.set_label("nigga")
+        #fig, ax = plt.subplots()
+        #ax.plot_date(list(data['date']), 
+        #         list(data['duration']), fmt = 'd')
+        #fig.add_subplot(ax)
+        #fig.add_axes([-0.5,0.5,0,1])
+        #print(plt.axes())
+        #figure2.autofmt_xdate() #https://matplotlib.org/3.3.4/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure.align_xlabels
+        
+        #ax.set_label("retard")
+        #figure2.add_axes([0,0,1,1])
+        #print(figure2.gca())
+        line2 = FigureCanvasTkAgg(fig, self.window)
         line2.get_tk_widget().grid(column = 0, row=15, sticky=tk.E, pady=4, padx = 6)
         #df2 = df2[['Year','Unemployment_Rate']].groupby('Year').sum()
-        print(list(data['date']))
-        plt.plot(list(data['date']), 
-                 list(data['duration']))
-        plt.grid(True)
+        
+
        
     
     def build_canvas(self):
