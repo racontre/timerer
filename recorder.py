@@ -30,7 +30,7 @@ class Record(object):
                     data = line.split(',') #0th  is the day, 1st is the comment, 2nd is duration
                     date = dt.strptime(data[0], '%d/%m/%Y %H:%M:%S')
                     duration = dt.strptime(data[2], '%H:%M:%S\n')
-                    hours['date'].append(date) #pick what to show at graph making
+                    hours['date'].append(date.date()) #pick what to show at graph making
                     hours['duration'].append(duration.hour + duration.minute/60 + duration.second/3600)
         except FileNotFoundError:
                 logger.logging.error("get_records: no file for ", activity_name)

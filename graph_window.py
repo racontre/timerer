@@ -29,12 +29,10 @@ class graph_window(object):
         
         def check_states():
             records=  []
-            names = []
             for check in check_vars:
                 if check_vars[check].get():
                     print(check)
                     records.append(record.get_records(check))
-                    names.append()
             graph_window.build_graph(self, records)
         
         self.window = tk.Toplevel(master_window)
@@ -61,38 +59,47 @@ class graph_window(object):
 
     
     def build_graph(self, checked_data):
-        #data things are in datetime.datetime format
-        #check if graph already exists
-        # Create figure and plot a stem plot with the date
+        """ i cant do stacked bars
+        sorry......"""
+        stack = {'date': [],
+                 'duration': []}
         fig, ax = plt.subplots(figsize=(8.8, 4), constrained_layout=True)
         ax.set(title="Activity Graph")
-        for  data in checked_data:
-            ax.bar(list(data['date']), list(data['duration']), bottom=0)  # Baseline and markers on it.
-        
-        #plt.legend(['NA', 'EU', 'JP', 'Others'], loc='upper left', ncol = 4)
-        #ax.xaxis.set_major_locator(mdates.MonthLocator(interval=4))
+        for data in checked_data:
+            bottom_list = []
+            prev_y_data = 0
+            print(data['date'])
+            print(data['duration'])
+
+            for y_data in data['date']:
+                match = False
+                #will create entry in bottom list for each
+                for j, x_data in enumerate(stack['date']): 
+                    
+                    if (y_data == x_data):
+                        match = True
+                        #print('same date found: ', stack['duration'][j], ' at date: ', stack['date'][j])
+                        bottom_list.append(stack['duration'][j] + 0.02)
+                #print(y_data)
+                if ((prev_y_data is not y_data) and not match and stack['date']):          
+                    if (prev_y_data == y_data): 
+                        #print ("we add 0 here:  prev_y_data: ", prev_y_data,  " y_data: ", y_data) 
+                        bottom_list.append(0)
+                prev_y_data = y_data
+            #print(bottom_list, ' ', data['duration'])
+            
+            
+            if (not bottom_list):
+                ax.bar(list(data['date']), list(data['duration']), bottom=0)  
+            else:
+                ax.bar(list(data['date']), list(data['duration']), bottom=bottom_list)  
+            #stack['duration'] = stack['duration'] + data['duration']
+            #stack['date'] =  stack['date'] + data['date']
+            #Uncomment the above at your own risk for mental stability
         ax.xaxis.set_major_formatter(mdates.DateFormatter("%d %b"))
         
-        #figure2 = plt.Figure(figsize=(6,4), dpi=100)
-        #figure1 = plt.Figure(figsize=(6,4), dpi=50)
-        #ax2 = figure2.add_subplot().bar(list(data['date']), 
-        #     list(data['duration']))
-        #ax2.set_label("reatrd")
-        #figure2.set_label("nigga")
-        #fig, ax = plt.subplots()
-        #ax.plot_date(list(data['date']), 
-        #         list(data['duration']), fmt = 'd')
-        #fig.add_subplot(ax)
-        #fig.add_axes([-0.5,0.5,0,1])
-        #print(plt.axes())
-        #figure2.autofmt_xdate() #https://matplotlib.org/3.3.4/api/_as_gen/matplotlib.figure.Figure.html#matplotlib.figure.Figure.align_xlabels
-        
-        #ax.set_label("retard")
-        #figure2.add_axes([0,0,1,1])
-        #print(figure2.gca())
         line2 = FigureCanvasTkAgg(fig, self.window)
         line2.get_tk_widget().grid(column = 0, row=15, sticky=tk.E, pady=4, padx = 6)
-        #df2 = df2[['Year','Unemployment_Rate']].groupby('Year').sum()
         
 
        

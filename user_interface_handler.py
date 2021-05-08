@@ -27,9 +27,9 @@ class user_interface_handler:
     frame_width = 800
     
     def __init__(self, window):
-            #Reference to the window in main
+        """Initializes the window"""
         self.window = window
-        
+        self.window.resizable(False, False)
             #OPTIONS&VARS
         window.title("Activity Timer!")
         self.main_bg= contents.bgColor
@@ -39,7 +39,7 @@ class user_interface_handler:
         self.canvas_height = 900
         self.canvas_width = 950
         self.timer = 0
-              
+        
             # CONTAINER FOR ALL THE FRAMES
         #self.content = ttk.Frame(self.window, padding=(3,3,12,12))
         #self.content.grid()
